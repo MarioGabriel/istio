@@ -1,0 +1,263 @@
+### Configuring the Cluster ###
+# Access the GKE cluster
+gcloud container clusters get-credentials standard-cluster-1 --zone us-central1-a --project istiotest-239415
+
+# Make myself an admin
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user="mgigamail@gmail.com"
+
+###############################
+
+### Deploying the Kubernetes Dashboard ###
+# Apply the Kubernetes Dashboard yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+
+# Serve the dashboard on 
+# 	http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
+# using Google Cloud SDK Shell
+kubectl proxy
+
+# Accessing the Kubernetes Dashboard
+# Two options :
+# 	1. Create a Service Account with cluster-admin role to access the Dashboard
+# 	2. Give the Kubernetes Dashboard's default service account a cluster-admin role so that anyone can access the Dashboard
+
+## Option 1 ##
+# Create the access account
+kubectl create serviceaccount k8sadmin -n kube-system
+kubectl create clusterrolebinding k8sadmin --clusterrole=cluster-admin --serviceaccount=kube-system:k8sadmin
+
+# Get the token and copy it
+kubectl get secret $(kubectl get secret -n kube-system | grep k8sadmin-token | cut -d " " -f1) -n kube-system -o 'jsonpath={.data.token}' | base64 --decode
+
+	eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrOHNhZG1pbi10b2tlbi1kbjlxbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrOHNhZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImVmMjcyMzQyLTcwZDAtMTFlOS05MzY1LTQyMDEwYTgwMDE1NSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprOHNhZG1pbiJ9.QudtdZf_SbEkk4cpnTMOyBNXRyDKErg755jbGB3v0dGz5ocoqK8_X0GA7Ulacu3kHpTYey_csHGO5tTgB6zrthTBWCt1ghT1P37fQosBlERrdcf6bfphCtadHQevf0rtK5lAoDF7wECnogjVRlV0BCQ8KL57v27lW1Lgq0NzaDmqaITC8YeUc2oLgEAWONQtcGogvcdZa3exvNsyZpoVp6hM504uZUxX7eKQwhtt2S0o10hcIkh3TJWfmIxJnw2WQ655hnfTZCRDyoV7x7YjdRcWyschC-mN9sjjIr7XVKQMan3PByR7fJb-zdVZIy2waNfT80hvjz6fAsW-tOGSSw
+
+# Paste it into the 'Token' field and click 'SIGN IN'. Done.
+
+## Option 2 ##
+# Create a ClusterRoleBinding of the kubernetes-dashboard account to the cluster-admin ClusterRole
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+EOF
+
+##########################################
+
+### Preparing a Kiali Secret ###
+
+# Creating a istio-system namespace
+NAMESPACE=istio-system
+kubectl create namespace $NAMESPACE
+
+# Creating a Kiali Username and Password
+KIALI_USERNAME=$(read -p 'Kiali Username: ' uval && echo -n $uval | base64)
+KIALI_PASSPHRASE=$(read -sp 'Kiali Passphrase: ' pval && echo -n $pval | base64)
+
+# Create a Kiali secret with these credentials
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kiali
+  namespace: $NAMESPACE
+  labels:
+    app: kiali
+type: Opaque
+data:
+  username: $KIALI_USERNAME
+  passphrase: $KIALI_PASSPHRASE
+EOF
+
+################################
+
+### Install Helm ###
+# Install Helm + Tiller
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+
+# Add a Tiller service account within a kube-system
+kubectl apply -f install/kubernetes/helm/helm-service-account.yaml
+
+# Initialize helm within the tiller service account
+helm init --service-account tiller
+
+# Updates the repos for Helm repo integration
+helm repo update
+
+# Verify that helm is installed in the cluster
+kubectl get deploy,svc tiller-deploy -n kube-system
+
+####################
+
+### Install Istio + Monitoring tools with Helm ###
+# Download Istio
+curl -L https://git.io/getLatestIstio | sh -
+cd istio-1.1.5
+
+# Install Istio CRDs
+helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
+
+# Verify that all 53 Istio CRDs were committed to the Kubernetes api-server using the following command:
+# If cert-manager is enabled, then the CRD count will be 58 instead.
+# Wait a second before doing this command as the CRDs take some time to be deployed.
+kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l
+	53
+
+# Install Istio with Kiali, ServiceGraph, Tracing (Jaeger by default) and Grafana enabled
+helm install install/kubernetes/helm/istio --name istio --namespace istio-system --set kiali.enabled=true --set servicegraph.enabled=true --set tracing.enabled=true --set grafana.enabled=true --set mixer.telemetry.resources.requests.cpu=100m --set pilot.resources.requests.cpu=200m
+
+# Check the pods are running
+kubectl get pods -n istio-system
+	NAME                                      READY     STATUS    RESTARTS   AGE
+	grafana-6bbcd7db94-7nts9                  1/1       Running   0          3m
+	istio-citadel-766c8db66f-69clq            1/1       Running   0          3m
+	istio-galley-6df7d9fd6b-vb8rm             1/1       Running   0          3m
+	istio-ingressgateway-5c96d9678d-fpd5p     1/1       Running   0          3m
+	istio-pilot-667c87f76d-z8l5v              2/2       Running   0          3m
+	istio-policy-58f44cbb5f-ljm2g             2/2       Running   3          3m
+	istio-sidecar-injector-854db49d8d-mszw4   1/1       Running   0          3m
+	istio-telemetry-5c55c88df8-8txvx          2/2       Running   2          3m
+	istio-tracing-6fdbc74b58-f2bh7            1/1       Running   0          3m
+	kiali-5f5886546-rbn9w                     1/1       Running   0          3m
+	prometheus-75d5d6b664-mclpb               1/1       Running   0          3m
+	servicegraph-5d99d5f447-cp5vk             1/1       Running   1          3m
+
+##################################################
+
+### Deploying an Application with Istio Service Mesh ###
+
+# Label namespace that application object will be deployed to by the following command (take default namespace as an example)
+kubectl label namespace default istio-injection=enabled
+
+# Verify that the namespace has istio-injection enabled
+kubectl get namespace -L istio-injection
+
+########################################################
+
+### Deploying the Bookinfo Application ###
+# Deploying the App
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+
+# Deploying the Gateway
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+
+# Setting Environment Variables
+export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+echo $GATEWAY_URL
+	35.225.82.1:80
+
+# Verifying the Deployment
+kubectl get pods
+	NAME                              READY     STATUS    RESTARTS   AGE
+	details-v1-68868454f5-26k5c       2/2       Running   0          1m
+	productpage-v1-5cb458d74f-29hf9   2/2       Running   0          1m
+	ratings-v1-76f4c9765f-sjnmv       2/2       Running   0          1m
+	reviews-v1-56f6855586-7jmv6       2/2       Running   0          1m
+	reviews-v2-65c9df47f8-gp6z6       2/2       Running   0          1m
+	reviews-v3-6cf47594fd-274bj       2/2       Running   0          1m
+
+kubectl get gateways
+	NAME               AGE
+	bookinfo-gateway   1m
+
+
+# Checking if everything is working
+kubectl get pods --all-namespaces
+NAMESPACE      NAME                                                           READY     STATUS    RESTARTS   AGE
+default        details-v1-68868454f5-26k5c                                    2/2       Running   0          2m
+default        productpage-v1-5cb458d74f-29hf9                                2/2       Running   0          2m
+default        ratings-v1-76f4c9765f-sjnmv                                    2/2       Running   0          2m
+default        reviews-v1-56f6855586-7jmv6                                    2/2       Running   0          2m
+default        reviews-v2-65c9df47f8-gp6z6                                    2/2       Running   0          2m
+default        reviews-v3-6cf47594fd-274bj                                    2/2       Running   0          2m
+istio-system   grafana-6bbcd7db94-7nts9                                       1/1       Running   0          7m
+istio-system   istio-citadel-766c8db66f-69clq                                 1/1       Running   0          7m
+istio-system   istio-galley-6df7d9fd6b-vb8rm                                  1/1       Running   0          7m
+istio-system   istio-ingressgateway-5c96d9678d-fpd5p                          1/1       Running   0          7m
+istio-system   istio-pilot-667c87f76d-z8l5v                                   2/2       Running   0          7m
+istio-system   istio-policy-58f44cbb5f-ljm2g                                  2/2       Running   3          7m
+istio-system   istio-sidecar-injector-854db49d8d-mszw4                        1/1       Running   0          7m
+istio-system   istio-telemetry-5c55c88df8-8txvx                               2/2       Running   2          7m
+istio-system   istio-tracing-6fdbc74b58-f2bh7                                 1/1       Running   0          7m
+istio-system   kiali-5f5886546-rbn9w                                          1/1       Running   0          7m
+istio-system   prometheus-75d5d6b664-mclpb                                    1/1       Running   0          7m
+istio-system   servicegraph-5d99d5f447-cp5vk                                  1/1       Running   1          7m
+kube-system    event-exporter-v0.2.3-85644fcdf-bzrcw                          2/2       Running   0          1h
+kube-system    fluentd-gcp-scaler-8b674f786-2kfzf                             1/1       Running   0          1h
+kube-system    fluentd-gcp-v3.2.0-crhk2                                       2/2       Running   0          29m
+kube-system    fluentd-gcp-v3.2.0-dt9kb                                       2/2       Running   0          1h
+kube-system    fluentd-gcp-v3.2.0-k48jw                                       2/2       Running   0          1h
+kube-system    fluentd-gcp-v3.2.0-r99bx                                       2/2       Running   0          29m
+kube-system    fluentd-gcp-v3.2.0-rcnxv                                       2/2       Running   0          1h
+kube-system    heapster-v1.6.0-beta.1-5868899dcb-l4jl6                        3/3       Running   0          1h
+kube-system    kube-dns-76dbb796c5-4bjwq                                      4/4       Running   0          1h
+kube-system    kube-dns-76dbb796c5-7c8jx                                      4/4       Running   0          1h
+kube-system    kube-dns-autoscaler-67c97c87fb-ckkdl                           1/1       Running   0          1h
+kube-system    kube-proxy-gke-standard-cluster-1-default-pool-f8c9079d-8mrl   1/1       Running   0          28m
+kube-system    kube-proxy-gke-standard-cluster-1-default-pool-f8c9079d-gs48   1/1       Running   0          1h
+kube-system    kube-proxy-gke-standard-cluster-1-default-pool-f8c9079d-jmf5   1/1       Running   0          29m
+kube-system    kube-proxy-gke-standard-cluster-1-default-pool-f8c9079d-q7tl   1/1       Running   0          1h
+kube-system    kube-proxy-gke-standard-cluster-1-default-pool-f8c9079d-z97x   1/1       Running   0          1h
+kube-system    kubernetes-dashboard-5dd89b9875-4b5c4                          1/1       Running   0          1h
+kube-system    l7-default-backend-7ff48cffd7-dx4r5                            1/1       Running   0          1h
+kube-system    metrics-server-v0.2.1-fd596d746-9jqp7                          2/2       Running   0          1h
+kube-system    prometheus-to-sd-522mg                                         1/1       Running   0          1h
+kube-system    prometheus-to-sd-8bbmv                                         1/1       Running   0          29m
+kube-system    prometheus-to-sd-jprd9                                         1/1       Running   0          29m
+kube-system    prometheus-to-sd-kv9wc                                         1/1       Running   0          1h
+kube-system    prometheus-to-sd-smrx2                                         1/1       Running   0          1h
+kube-system    tiller-deploy-54fc6d9ccc-zm96q                                 1/1       Running   0          53m
+
+# Accessing the Application
+35.225.82.1:80/productpage
+
+##########################################
+
+### Deploying the Grafana Dashboard ###
+# Exposing the Grafana service
+kubectl -n istio-system port-forward $(kubectl get pods -n istio-system -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
+
+# Accessing the Dashboard
+http://localhost:3000/dashboard/db/istio-dashboard
+
+#######################################
+
+### Deploying the Kiali Dashboard ###
+
+# Exposing the Kiali service
+kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=kiali -o jsonpath='{.items[0].metadata.name}') 20001:20001
+
+# Accessing the Dashboard
+http://localhost:20001/kiali/console
+
+#####################################
+
+### Deploying the Jaeger Dashboard ###
+
+# Exposing the Jaeger Service
+kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686  &
+
+# Accessing the Dashboard
+http://localhost:16686
+
+# Note : Jaeger works with a 1% default sampling rate, so at least 100 requests are necessary
+
+######################################
+
+### Testing our Dashboards ###
+for i in 'seq 1 1000'; do curl -s -o /dev/null http://$GATEWAY_URL/productpage; done
+
+##############################
