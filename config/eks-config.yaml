@@ -1,0 +1,34 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-remote-cluster
+  region: us-east-2
+  version: "1.12"
+
+vpc:
+  id: "vpc-0dea19edc4286baf6"
+  cidr: "10.0.0.0/16"
+  subnets:
+    public:
+      us-east-2c:
+          id: "subnet-0f97a6b39534b2400"
+          cidr: "10.0.1.0/24"
+
+iam: 
+  serviceRoleARN: "arn:aws:iam::448647583624:role/eks-iam-role"
+nodeGroups:
+  - name: standard-workers
+    instanceType: t2.medium
+    desiredCapacity: 2
+    ami: auto
+    minSize: 1
+    maxSize: 4
+    privateNetworking: true
+    allowSSH: true
+    sshPublicKeyName: 'NewAWSStack'
+    availabilityZones: "ap-south-2c"
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+        autoScaler: true
