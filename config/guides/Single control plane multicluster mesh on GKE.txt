@@ -1,0 +1,295 @@
+## Setting the project you're going to be working on
+
+gcloud config set project istiotest-239415
+proj=$(gcloud config list --format='value(core.project)')
+
+
+## Creating the two GKE Clusters
+# Cluster 1
+zone="us-east4-a"
+region="us-east4"
+cluster="cluster-1"
+
+gcloud beta container --project $proj clusters create $cluster --username "admin" --zone $zone --cluster-version "1.13.6-gke.6" --machine-type "n1-standard-1" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --metadata disable-legacy-endpoints=true --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "3" --enable-cloud-logging --enable-cloud-monitoring --enable-ip-alias --network "projects/$proj/global/networks/default" --subnetwork "projects/$proj/regions/$region/subnetworks/default" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair --async
+
+
+# Cluster 2
+cluster="cluster-2"
+gcloud beta container --project $proj clusters create $cluster --username "admin" --zone $zone --cluster-version "1.13.6-gke.6" --machine-type "n1-standard-1" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --metadata disable-legacy-endpoints=true --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "3" --enable-cloud-logging --enable-cloud-monitoring --enable-ip-alias --network "projects/$proj/global/networks/default" --subnetwork "projects/$proj/regions/$region/subnetworks/default" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair --async
+
+## Configure kubeconfig to have access to both clusters
+# Getting cluster credentials
+# gcloud container clusters get-credentials 
+# 	updates a kubeconfig file with appropriate credentials and endpoint information to point kubectl at a specific cluster in GKE
+
+gcloud container clusters get-credentials cluster-1 --zone $zone
+gcloud container clusters get-credentials cluster-2 --zone $zone
+
+# Validate kubectl access to each cluster and create a cluster-admin cluster role binding tied to the Kubernetes credentials associated with your GCP user
+
+# Cluster 1
+kubectl config use-context "gke_${proj}_${zone}_cluster-1"
+kubectl get pods --all-namespaces
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user="$(gcloud config get-value core/account)"
+
+# Cluster 2
+kubectl config use-context "gke_${proj}_${zone}_cluster-2"
+kubectl get pods --all-namespaces
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user="$(gcloud config get-value core/account)"
+
+## Creating a GCloud Firewall Rule
+# To allow pods on each cluster directly communicate we need to set the following rule :
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+ALL_CLUSTER_CIDRS=$(gcloud container clusters list --format='value(clusterIpv4Cidr)' | sort | uniq)
+
+ALL_CLUSTER_CIDRS=$(join_by , $(echo "${ALL_CLUSTER_CIDRS}"))
+
+ALL_CLUSTER_NETTAGS=$(gcloud compute instances list --format='value(tags.items.[0])' | sort | uniq)
+
+ALL_CLUSTER_NETTAGS=$(join_by , $(echo "${ALL_CLUSTER_NETTAGS}"))
+
+gcloud compute firewall-rules create istio-multicluster-test-pods --allow=tcp,udp,icmp,esp,ah,sctp --direction=INGRESS --priority=900 --source-ranges="${ALL_CLUSTER_CIDRS}" --target-tags="${ALL_CLUSTER_NETTAGS}" --quiet
+
+
+## Preparing before the installation of Istio Control
+# All of this in cluster 1
+kubectl config use-context "gke_${proj}_${zone}_cluster-1"
+
+# Deploying K8s Dashboard
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+
+NAMESPACE=istio-system
+kubectl create namespace $NAMESPACE
+
+# Creating a Kiali Username and Password
+KIALI_USERNAME=$(read -p 'Kiali Username: ' uval && echo -n $uval | base64)
+KIALI_PASSPHRASE=$(read -sp 'Kiali Passphrase: ' pval && echo -n $pval | base64)
+
+# Create a Kiali secret with these credentials
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kiali
+  namespace: $NAMESPACE
+  labels:
+    app: kiali
+type: Opaque
+data:
+  username: $KIALI_USERNAME
+  passphrase: $KIALI_PASSPHRASE
+EOF
+
+
+## Installing helm
+# Download Istio's latest
+curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.1.8 sh -
+export PATH="$PATH:/home/mgigamail/istio-1.1.8/bin"
+cd istio-1.1.8
+
+
+# Install Helm + Tiller with curl
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+
+# Add a Tiller service account within a kube-system
+kubectl apply -f install/kubernetes/helm/helm-service-account.yaml
+
+# Initialize helm within the tiller service account
+helm init --service-account tiller
+
+# Updates the repos for Helm repo integration
+helm repo update
+
+# Verify that helm is installed in the cluster
+kubectl get deploy,svc tiller-deploy -n kube-system
+
+
+## Installing Istio control plane
+
+cat install/kubernetes/helm/istio-init/files/crd-* > $HOME/istio_master.yaml
+
+helm template install/kubernetes/helm/istio --name istio --namespace istio-system --set kiali.enabled=true --set servicegraph.enabled=true --set tracing.enabled=true --set grafana.enabled=true --set mixer.telemetry.resources.requests.cpu=100m --set pilot.resources.requests.cpu=200m >> $HOME/istio_master.yaml
+kubectl apply -f $HOME/istio_master.yaml
+kubectl label namespace default istio-injection=enabled
+
+kubectl get pods -n istio-system
+
+kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l
+# Check if it returns 53
+
+## Generate remote cluster manifest
+# Get IPs of the control plane pods
+export PILOT_POD_IP=$(kubectl -n istio-system get pod -l istio=pilot -o jsonpath='{.items[0].status.podIP}')
+export POLICY_POD_IP=$(kubectl -n istio-system get pod -l istio=mixer -o jsonpath='{.items[0].status.podIP}')
+export TELEMETRY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=telemetry -o jsonpath='{.items[0].status.podIP}')
+
+# Generate remote cluster manifest
+helm template install/kubernetes/helm/istio --namespace istio-system --name istio-remote --values install/kubernetes/helm/istio/values-istio-remote.yaml --set global.remotePilotAddress=${PILOT_POD_IP} --set global.remotePolicyAddress=${POLICY_POD_IP} --set global.remoteTelemetryAddress=${TELEMETRY_POD_IP} > $HOME/istio-remote.yaml
+
+## Install remote cluster manifest
+kubectl config use-context "gke_${proj}_${zone}_cluster-2"
+kubectl create ns istio-system
+kubectl apply -f $HOME/istio-remote.yaml
+kubectl label namespace default istio-injection=enabled
+
+## Creating remote cluster's kubeconfig for Istio Pilot
+# Preparing environment variables for building the kubeconfig file for the service account 'istio-multi'
+
+export WORK_DIR=$(pwd)
+CLUSTER_NAME=$(kubectl config view --minify=true -o jsonpath='{.clusters[].name}')
+CLUSTER_NAME="${CLUSTER_NAME##*_}"
+export KUBECFG_FILE=${WORK_DIR}/${CLUSTER_NAME}
+SERVER=$(kubectl config view --minify=true -o jsonpath='{.clusters[].cluster.server}')
+NAMESPACE=istio-system
+SERVICE_ACCOUNT=istio-multi
+SECRET_NAME=$(kubectl get sa ${SERVICE_ACCOUNT} -n ${NAMESPACE} -o jsonpath='{.secrets[].name}')
+CA_DATA=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o jsonpath="{.data['ca\.crt']}")
+TOKEN=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o jsonpath="{.data['token']}" | base64 --decode)
+
+# Create a kubeconfig file in the working directory for the service account 'istio-multi'
+
+cat <<EOF > ${KUBECFG_FILE}
+apiVersion: v1
+clusters:
+   - cluster:
+       certificate-authority-data: ${CA_DATA}
+       server: ${SERVER}
+     name: ${CLUSTER_NAME}
+contexts:
+   - context:
+       cluster: ${CLUSTER_NAME}
+       user: ${CLUSTER_NAME}
+     name: ${CLUSTER_NAME}
+current-context: ${CLUSTER_NAME}
+kind: Config
+preferences: {}
+users:
+   - name: ${CLUSTER_NAME}
+     user:
+       token: ${TOKEN}
+EOF
+
+# At this point, the remote clusters’ kubeconfig files have been created in the ${WORK_DIR} directory
+# The filename for a cluster is the same as the original kubeconfig cluster name.
+
+## Configure Istio control plane to discover the remote cluster
+
+kubectl config use-context "gke_${proj}_${zone}_cluster-1"
+kubectl create secret generic ${CLUSTER_NAME} --from-file ${KUBECFG_FILE} -n ${NAMESPACE}
+kubectl label secret ${CLUSTER_NAME} istio/multiCluster=true -n ${NAMESPACE}
+
+## Deploy Bookinfo across clusters
+# Apply bookinfo in cluster-1
+kubectl config use-context "gke_${proj}_${zone}_cluster-1"
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+
+# Remove reviews-v3 to add it to cluster-2
+kubectl delete deployment reviews-v3 
+
+# Create a reviews-v3.yaml to be deployed on cluster-2
+cat <<EOF>>$HOME/reviews-v3.yaml
+---
+##################################################################################################
+# Ratings service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  labels:
+    app: ratings
+spec:
+  ports:
+  - port: 9080
+    name: http
+---
+##################################################################################################
+# Reviews service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: reviews
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: reviews-v3
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v3
+    spec:
+      containers:
+      - name: reviews
+        image: istio/examples-bookinfo-reviews-v3:1.5.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+EOF
+
+# Note: The ratings service definition is added to the remote cluster because reviews-v3 is a client of ratings and creating the service object creates a DNS entry. The Istio sidecar in the reviews-v3 pod will determine the proper ratings endpoint after the DNS lookup is resolved to a service address. This would not be necessary if a multicluster DNS solution were additionally set up, e.g. as in a federated Kubernetes environment.
+
+
+# Deploy the reviews-v3.yaml on the second cluster
+kubectl config use-context "gke_${proj}_${zone}_cluster-2"
+kubectl apply -f $HOME/reviews-v3.yaml
+
+
+# Get the istio-ingressgateway service’s external IP to access the bookinfo page to validate that Istio is including the remote’s reviews-v3 instance in the load balancing of reviews versions:
+
+kubectl config use-context "gke_${proj}_${zone}_cluster-1"
+kubectl get svc istio-ingressgateway -n istio-system
+
+## Checking our dashboards
+# Grafana
+kubectl -n istio-system port-forward $(kubectl get pods -n istio-system -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
+
+# Kiali
+kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=kiali -o jsonpath='{.items[0].metadata.name}') 20001:20001
+
+# Jaeger
+kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686  &
+
+
+# Setting ingress gateway env variables
+export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+echo $GATEWAY_URL
+
+## Testing our Dashboards
+for i in {1..1000};do curl -s -o /dev/null http://$GATEWAY_URL/productpage; echo $i; done
+
+proj=$(gcloud config list --format='value(core.project)')
+zone="us-east4-a"
+region="us-east4"
+
+kubectl config use-context "gke_${proj}_${zone}_cluster-1"
+kubectl config use-context "gke_${proj}_${zone}_cluster-2"
+
+
+gcloud container clusters get-credentials cluster-1 --zone us-east4-a --project istiotest-239415
+# Grafana
+kubectl -n istio-system port-forward grafana-77b49c55db-6hcrw 3000:3000 &
+
+# Kiali
+kubectl -n istio-system port-forward kiali-5c584d45f6-z9qn6 20001:20001 & 
+
+# Jaeger
+kubectl port-forward -n istio-system istio-tracing-595796cf54-ng8v6 16686:16686  & 
