@@ -29,5 +29,6 @@ nodeGroups:
       withAddonPolicies:
         imageBuilder: true
         autoScaler: true
-    allowSSH: true
-    SSHPublicKeyName: "NewAWSStack.pem"
+    ssh:
+      allow: true
+      publicKeyPath: "AWSWorkersKey.pub"
