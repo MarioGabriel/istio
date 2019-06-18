@@ -70,8 +70,6 @@ helm install install/kubernetes/helm/istio --name istio --namespace istio-system
 kubectl label namespace default istio-injection=enabled
 kubectl get namespace -L istio-injection
 
-
-
 export PILOT_POD_IP=$(kubectl -n istio-system get pod -l istio=pilot -o jsonpath='{.items[0].status.podIP}')
 export POLICY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=policy -o jsonpath='{.items[0].status.podIP}')
 export TELEMETRY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=telemetry -o jsonpath='{.items[0].status.podIP}')
@@ -84,13 +82,12 @@ echo $TELEMETRY_POD_IP
 # On the Remote Cluster
 # Deploy the EKS Cluster
 
-eksctl create cluster --name eks-remote-cluster --version 1.12 --nodegroup-name standard-workers --node-type t2.medium --nodes 3 --nodes-min 1 --nodes-max 5 --node-ami auto
+eksctl create cluster --config-file=eks-config.yaml
 
 # Paste here the values obtained from the last step
 export PILOT_POD_IP=10.44.0.20
 export POLICY_POD_IP=10.44.1.23
 export TELEMETRY_POD_IP=10.44.1.25
-
 
 # Deploy the istio-remote component to each remote K8s cluster with Helm + Tiller
 
@@ -186,3 +183,7 @@ echo $GATEWAY_URL
 
 
 kubectl -n istio-system port-forward kiali-5c584d45f6-9zqvj 20001:20001
+
+
+
+for i in {1..1000}; do curl -s -o /dev/null http://$GATEWAY_URL/productpage; done
