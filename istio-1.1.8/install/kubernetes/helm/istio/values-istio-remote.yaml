@@ -25,7 +25,7 @@ global:
 
   defaultPodDisruptionBudget: {}
 
-  enableTracing: false
+  enableTracing: true
 
   # Sets an identifier for the remote network to be used for Split Horizon EDS. The network will be sent
   # to the Pilot when connected by the sidecar and will affect the results returned in EDS requests.
