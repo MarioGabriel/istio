@@ -1,0 +1,189 @@
+# Guide : Multicluster Istio with VPN
+https://istio.io/docs/setup/kubernetes/install/multicluster/vpn/
+https://www.ibm.com/cloud/blog/single-service-mesh-with-istio-against-multiple-hybrid-clusters
+
+## On Local GKE cluster
+
+# Deploy GKE Cluster
+
+gcloud config set project istiotest-239415
+proj=$(gcloud config list --format='value(core.project)')
+zone="us-central1-a"
+region="us-central1"
+cluster="gke-local-cluster"
+
+gcloud beta container --project $proj clusters create $cluster --username "admin" --zone $zone --cluster-version "1.13.6-gke.6" --machine-type "n1-standard-4" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --metadata disable-legacy-endpoints=true --cluster-ipv4-cidr=10.128.10.0/22 --services-ipv4-cidr=10.128.20.0/22 --default-max-pods-per-node=110 --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "2" --enable-cloud-logging --enable-cloud-monitoring --enable-ip-alias --network "projects/$proj/global/networks/default" --subnetwork "projects/$proj/regions/$region/subnetworks/default" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair --async
+
+gcloud beta container --project $proj clusters create $cluster --username "admin" --zone $zone --cluster-version "1.13.6-gke.6" --machine-type "n1-standard-4" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --metadata disable-legacy-endpoints=true --default-max-pods-per-node=110 --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "2" --enable-cloud-logging --enable-cloud-monitoring --enable-ip-alias --network "projects/$proj/global/networks/default" --subnetwork "projects/$proj/regions/$region/subnetworks/default" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair --async
+
+# Deploy K8s Dashboard
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+kubectl create serviceaccount k8sadmin -n kube-system
+kubectl create clusterrolebinding k8sadmin --clusterrole=cluster-admin --serviceaccount=kube-system:k8sadmin
+kubectl get secret $(kubectl get secret -n kube-system | grep k8sadmin-token | cut -d " " -f1) -n kube-system -o 'jsonpath={.data.token}' | base64 --decode
+>eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrOHNhZG1pbi10b2tlbi1nNms4biIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrOHNhZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImM3OGQ1Y2JmLTkwZmUtMTFlOS1hOWMyLTQyMDEwYTgwMDFlZCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprOHNhZG1pbiJ9.HSGFSWc9LAAQyVExl6Ji2UKz5ou6wJI5GtaPWuO5D5u4h8K0TOtn_TEJPK6SU726FEZ0fQvddmwJZkRH8MuoRIT-6HgeSAh9ONQImJ97dFK_3nacsvB1XNhF2emza_yE1ju-vQgLGJDLI-QCH1nzcenH_TPSxvUYps1GgRRTmbtSlNQmOhiJVcYU3SfCEunhPJH2xtcMXL5YGPB_kexOXLAB_wk6wDnCYCOhNQUZY6O8-nMe2bgJewFtqpclbY8MkyQ8jzxKsZP2Y4ru63dZlsMXEc_edWEnXrtp4LTAr8ByBSZnKXzrF3JvpcXiurmn-8d6AObqVGgQfOXNRHUF9
+
+# Create Kiali Secret
+NAMESPACE=istio-system
+kubectl create namespace $NAMESPACE
+
+KIALI_USERNAME=$(read -p 'Kiali Username: ' uval && echo -n $uval | base64)
+KIALI_PASSPHRASE=$(read -sp 'Kiali Passphrase: ' pval && echo -n $pval | base64)
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kiali
+  namespace: $NAMESPACE
+  labels:
+    app: kiali
+type: Opaque
+data:
+  username: $KIALI_USERNAME
+  passphrase: $KIALI_PASSPHRASE
+EOF
+
+# Install Helm and Istio full control plane
+
+
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+
+kubectl apply -f install/kubernetes/helm/helm-service-account.yaml
+
+helm init --service-account tiller
+
+helm repo update
+
+kubectl get deploy,svc tiller-deploy -n kube-system
+
+export PATH="$PATH:/home/mgigamail/istio-1.1.8/bin"
+cd istio-1.1.8
+
+helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
+
+kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l
+> 53
+
+helm install install/kubernetes/helm/istio --name istio --namespace istio-system --set kiali.enabled=true --set servicegraph.enabled=true --set tracing.enabled=true --set grafana.enabled=true --set mixer.telemetry.resources.requests.cpu=100m --set pilot.resources.requests.cpu=200m
+
+kubectl label namespace default istio-injection=enabled
+kubectl get namespace -L istio-injection
+
+export PILOT_POD_IP=$(kubectl -n istio-system get pod -l istio=pilot -o jsonpath='{.items[0].status.podIP}')
+export POLICY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=policy -o jsonpath='{.items[0].status.podIP}')
+export TELEMETRY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=telemetry -o jsonpath='{.items[0].status.podIP}')
+
+# Copy these values and save in other cluster
+echo $PILOT_POD_IP
+echo $POLICY_POD_IP
+echo $TELEMETRY_POD_IP
+
+# On the Remote Cluster
+# Deploy the EKS Cluster
+
+eksctl create cluster --config-file=eks-config.yaml
+
+# Paste here the values obtained from the last step
+export PILOT_POD_IP=10.44.0.20
+export POLICY_POD_IP=10.44.1.23
+export TELEMETRY_POD_IP=10.44.1.25
+
+# Deploy the istio-remote component to each remote K8s cluster with Helm + Tiller
+
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+
+kubectl apply -f install/kubernetes/helm/helm-service-account.yaml
+
+helm init --service-account tiller
+
+helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
+
+kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l
+
+helm install install/kubernetes/helm/istio \
+--name istio-remote --namespace istio-system \
+--values install/kubernetes/helm/istio/values-istio-remote.yaml \
+--set global.remotePilotAddress=${PILOT_POD_IP} \
+--set global.remotePolicyAddress=${POLICY_POD_IP} \
+--set global.remoteTelemetryAddress=${TELEMETRY_POD_IP}
+
+helm install install/kubernetes/helm/istio --name istio-remote --namespace istio-system --values install/kubernetes/helm/istio/values-istio-remote.yaml --set global.remotePilotAddress=10.44.0.20 --set global.remotePolicyAddress=10.44.1.23 --set global.remoteTelemetryAddress=10.44.1.25
+
+
+kubectl label namespace default istio-injection=enabled
+kubectl get namespace -L istio-injection
+
+
+# The Istio control plane requires access to all clusters in the mesh to discover services, endpoints, and pod attributes. The following steps describe how to generate a kubeconfig configuration file for the Istio control plane to use a remote cluster.
+
+# The istio-remote Helm chart creates a Kubernetes service account named istio-multi in the remote cluster with the minimal required RBAC access. This procedure generates the remote cluster’s kubeconfig file using the credentials of said istio-multi service account.
+
+# Perform this procedure on each remote cluster to add the cluster to the service mesh. This procedure requires the cluster-admin user access permission to the remote cluster.
+
+
+# Do this on EKS Remote Cluster
+
+export WORK_DIR=$(pwd)
+CLUSTER_NAME=$(kubectl config view --minify=true -o jsonpath='{.clusters[].name}')
+export KUBECFG_FILE=${WORK_DIR}/${CLUSTER_NAME}
+SERVER=$(kubectl config view --minify=true -o jsonpath='{.clusters[].cluster.server}')
+NAMESPACE=istio-system
+SERVICE_ACCOUNT=istio-multi
+SECRET_NAME=$(kubectl get sa ${SERVICE_ACCOUNT} -n ${NAMESPACE} -o jsonpath='{.secrets[].name}')
+CA_DATA=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o jsonpath="{.data['ca\.crt']}")
+TOKEN=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o jsonpath="{.data['token']}" | base64 --decode)
+
+# Creating a file with all these env variables
+cat <<EOF > ${KUBECFG_FILE}
+apiVersion: v1
+clusters:
+   - cluster:
+       certificate-authority-data: ${CA_DATA}
+       server: ${SERVER}
+     name: ${CLUSTER_NAME}
+contexts:
+   - context:
+       cluster: ${CLUSTER_NAME}
+       user: ${CLUSTER_NAME}
+     name: ${CLUSTER_NAME}
+current-context: ${CLUSTER_NAME}
+kind: Config
+preferences: {}
+users:
+   - name: ${CLUSTER_NAME}
+     user:
+       token: ${TOKEN}
+EOF
+
+cat <<EOF > remote_cluster_env_vars
+export CLUSTER_NAME=${CLUSTER_NAME}
+export KUBECFG_FILE=${KUBECFG_FILE}
+export NAMESPACE=${NAMESPACE}
+EOF
+
+# On local GKE Cluster
+# Find a way to copy the files remote_cluster_env_vars and ${KUBECFG_FILE} from the remote to the local cluster
+
+source remote_cluster_env_vars
+kubectl create secret generic ${CLUSTER_NAME} --from-file ${KUBECFG_FILE} -n ${NAMESPACE}
+kubectl label secret ${CLUSTER_NAME} istio/multiCluster=true -n ${NAMESPACE}
+
+# Access services from different clusters
+# Kubernetes resolves DNS on a cluster basis. Because the DNS resolution is tied to the cluster, you must define the service object in every cluster where a client runs, regardless of the location of the service’s endpoints. To ensure this is the case, duplicate the service object to every cluster using kubectl. Duplication ensures Kubernetes can resolve the service name in any cluster. Since the service objects are defined in a namespace, you must define the namespace if it doesn’t exist, and include it in the service definitions in all clusters.
+
+# Deploy Bookinfo
+# On Local GKE
+export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+echo $GATEWAY_URL
+> 104.198.32.75:80
+
+
+kubectl -n istio-system port-forward kiali-5c584d45f6-9zqvj 20001:20001
+
+
+
+for i in {1..1000}; do curl -s -o /dev/null http://$GATEWAY_URL/productpage; done
