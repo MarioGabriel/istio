@@ -1,0 +1,85 @@
+2019-06-20T13:31:48.802721Z	info	FLAG: --applicationPorts="[9080]"
+2019-06-20T13:31:48.802772Z	info	FLAG: --binaryPath="/usr/local/bin/envoy"
+2019-06-20T13:31:48.802787Z	info	FLAG: --concurrency="2"
+2019-06-20T13:31:48.802792Z	info	FLAG: --configPath="/etc/istio/proxy"
+2019-06-20T13:31:48.802800Z	info	FLAG: --connectTimeout="10s"
+2019-06-20T13:31:48.802804Z	info	FLAG: --controlPlaneAuthPolicy="NONE"
+2019-06-20T13:31:48.802812Z	info	FLAG: --controlPlaneBootstrap="true"
+2019-06-20T13:31:48.802817Z	info	FLAG: --customConfigFile=""
+2019-06-20T13:31:48.802821Z	info	FLAG: --datadogAgentAddress=""
+2019-06-20T13:31:48.802825Z	info	FLAG: --disableInternalTelemetry="false"
+2019-06-20T13:31:48.802831Z	info	FLAG: --discoveryAddress="istio-pilot.istio-system:15010"
+2019-06-20T13:31:48.802836Z	info	FLAG: --domain="default.svc.cluster.local"
+2019-06-20T13:31:48.802841Z	info	FLAG: --drainDuration="45s"
+2019-06-20T13:31:48.802845Z	info	FLAG: --envoyMetricsServiceAddress=""
+2019-06-20T13:31:48.802849Z	info	FLAG: --help="false"
+2019-06-20T13:31:48.802854Z	info	FLAG: --id=""
+2019-06-20T13:31:48.802859Z	info	FLAG: --ip=""
+2019-06-20T13:31:48.802875Z	info	FLAG: --lightstepAccessToken=""
+2019-06-20T13:31:48.802880Z	info	FLAG: --lightstepAddress=""
+2019-06-20T13:31:48.802884Z	info	FLAG: --lightstepCacertPath=""
+2019-06-20T13:31:48.802888Z	info	FLAG: --lightstepSecure="false"
+2019-06-20T13:31:48.802895Z	info	FLAG: --log_as_json="false"
+2019-06-20T13:31:48.802899Z	info	FLAG: --log_caller=""
+2019-06-20T13:31:48.802904Z	info	FLAG: --log_output_level="default:info"
+2019-06-20T13:31:48.802913Z	info	FLAG: --log_rotate=""
+2019-06-20T13:31:48.802922Z	info	FLAG: --log_rotate_max_age="30"
+2019-06-20T13:31:48.802927Z	info	FLAG: --log_rotate_max_backups="1000"
+2019-06-20T13:31:48.802938Z	info	FLAG: --log_rotate_max_size="104857600"
+2019-06-20T13:31:48.802946Z	info	FLAG: --log_stacktrace_level="default:none"
+2019-06-20T13:31:48.802963Z	info	FLAG: --log_target="[stdout]"
+2019-06-20T13:31:48.802974Z	info	FLAG: --parentShutdownDuration="1m0s"
+2019-06-20T13:31:48.802980Z	info	FLAG: --proxyAdminPort="15000"
+2019-06-20T13:31:48.802990Z	info	FLAG: --proxyLogLevel="warning"
+2019-06-20T13:31:48.802999Z	info	FLAG: --serviceCluster="details.default"
+2019-06-20T13:31:48.803008Z	info	FLAG: --serviceregistry="Kubernetes"
+2019-06-20T13:31:48.803012Z	info	FLAG: --statsdUdpAddress=""
+2019-06-20T13:31:48.803017Z	info	FLAG: --statusPort="15020"
+2019-06-20T13:31:48.803020Z	info	FLAG: --templateFile=""
+2019-06-20T13:31:48.803030Z	info	FLAG: --trust-domain=""
+2019-06-20T13:31:48.803035Z	info	FLAG: --zipkinAddress="zipkin.istio-system:9411"
+2019-06-20T13:31:48.803062Z	info	Version root@161bf1f4-8ef6-11e9-887b-0a580a2c0403-docker.io/istio-1.1.9-879413c25b871ae6fd0df82bea1605baf12cba2e-Clean
+2019-06-20T13:31:48.803207Z	info	Obtained private IP [10.1.1.22 fe80::f4fb:4fff:fe3b:434d]
+2019-06-20T13:31:48.803270Z	info	Proxy role: &model.Proxy{ClusterID:"", Type:"sidecar", IPAddresses:[]string{"10.1.1.22", "10.1.1.22", "fe80::f4fb:4fff:fe3b:434d"}, ID:"details-v1-6886b56dc8-5qmfs.default", Locality:(*core.Locality)(nil), DNSDomain:"default.svc.cluster.local", ConfigNamespace:"", TrustDomain:"cluster.local", Metadata:map[string]string{}, SidecarScope:(*model.SidecarScope)(nil), ServiceInstances:[]*model.ServiceInstance(nil), WorkloadLabels:model.LabelsCollection(nil)}
+2019-06-20T13:31:48.803289Z	info	PilotSAN []string(nil)
+2019-06-20T13:31:48.803845Z	info	Effective config: binaryPath: /usr/local/bin/envoy
+concurrency: 2
+configPath: /etc/istio/proxy
+connectTimeout: 10s
+discoveryAddress: istio-pilot.istio-system:15010
+drainDuration: 45s
+parentShutdownDuration: 60s
+proxyAdminPort: 15000
+serviceCluster: details.default
+statNameLength: 189
+tracing:
+  zipkin:
+    address: zipkin.istio-system:9411
+
+2019-06-20T13:31:48.803869Z	info	Monitored certs: []string{"/etc/certs/cert-chain.pem", "/etc/certs/key.pem", "/etc/certs/root-cert.pem"}
+2019-06-20T13:31:48.803889Z	info	PilotSAN []string(nil)
+2019-06-20T13:31:48.803957Z	info	Opening status port 15020
+
+2019-06-20T13:31:48.804028Z	info	Starting proxy agent
+2019-06-20T13:31:48.804323Z	info	Received new config, resetting budget
+2019-06-20T13:31:48.804341Z	info	Reconciling retry (budget 10)
+2019-06-20T13:31:48.804364Z	info	watching /etc/certs for changes
+2019-06-20T13:31:48.804368Z	info	Epoch 0 starting
+2019-06-20T13:31:48.805180Z	info	Envoy command: [-c /etc/istio/proxy/envoy-rev0.json --restart-epoch 0 --drain-time-s 45 --parent-shutdown-time-s 60 --service-cluster details.default --service-node sidecar~10.1.1.22~details-v1-6886b56dc8-5qmfs.default~default.svc.cluster.local --max-obj-name-len 189 --allow-unknown-fields -l warning --concurrency 2]
+[2019-06-20 13:31:48.832][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Cluster.hosts' from file cds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:31:48.833][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Cluster.hosts' from file cds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:31:48.833][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Cluster.hosts' from file cds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:31:48.839][20][warning][config] [bazel-out/k8-opt/bin/external/envoy/source/common/config/_virtual_includes/grpc_stream_lib/common/config/grpc_stream.h:86] gRPC config stream closed: 14, no healthy upstream
+[2019-06-20 13:31:48.839][20][warning][config] [bazel-out/k8-opt/bin/external/envoy/source/common/config/_virtual_includes/grpc_stream_lib/common/config/grpc_stream.h:49] Unable to establish new stream
+[2019-06-20 13:31:50.100][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:31:50.104][20][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+[2019-06-20 13:31:50.106][20][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+2019-06-20T13:31:51.271217Z	info	Envoy proxy is ready
+[2019-06-20 13:31:51.463][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:31:58.161][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:31:59.678][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:32:05.655][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:35:06.424][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 13:46:14.608][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2019-06-20 14:02:59.247][20][warning][config] [bazel-out/k8-opt/bin/external/envoy/source/common/config/_virtual_includes/grpc_stream_lib/common/config/grpc_stream.h:86] gRPC config stream closed: 13, 
+[2019-06-20 14:02:59.725][20][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
