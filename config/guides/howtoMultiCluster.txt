@@ -21,7 +21,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/a
 kubectl create serviceaccount k8sadmin -n kube-system
 kubectl create clusterrolebinding k8sadmin --clusterrole=cluster-admin --serviceaccount=kube-system:k8sadmin
 kubectl get secret $(kubectl get secret -n kube-system | grep k8sadmin-token | cut -d " " -f1) -n kube-system -o 'jsonpath={.data.token}' | base64 --decode
->eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrOHNhZG1pbi10b2tlbi1nNms4biIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrOHNhZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImM3OGQ1Y2JmLTkwZmUtMTFlOS1hOWMyLTQyMDEwYTgwMDFlZCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprOHNhZG1pbiJ9.HSGFSWc9LAAQyVExl6Ji2UKz5ou6wJI5GtaPWuO5D5u4h8K0TOtn_TEJPK6SU726FEZ0fQvddmwJZkRH8MuoRIT-6HgeSAh9ONQImJ97dFK_3nacsvB1XNhF2emza_yE1ju-vQgLGJDLI-QCH1nzcenH_TPSxvUYps1GgRRTmbtSlNQmOhiJVcYU3SfCEunhPJH2xtcMXL5YGPB_kexOXLAB_wk6wDnCYCOhNQUZY6O8-nMe2bgJewFtqpclbY8MkyQ8jzxKsZP2Y4ru63dZlsMXEc_edWEnXrtp4LTAr8ByBSZnKXzrF3JvpcXiurmn-8d6AObqVGgQfOXNRHUF9
+>eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrOHNhZG1pbi10b2tlbi1yZ3JyciIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrOHNhZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjAxNjE5M2RiLTkyYTQtMTFlOS1iMmNhLTQyMDEwYTg0MDFiMCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprOHNhZG1pbiJ9.lg3fUIaFxYRvzrzNRO9uPOIIq9UyIAV1d5cpNJkT18w1mywc89rPQo_RqcHqoc90bguaUi-aNJDUM6ueJnPPSwFzQV7mJIkF15SNQPVF-Dr--dyuZzdpjxxbB-dnyhsDDtrqCiMZ7BQdLcAN9BQP0JZnmfPBQa0PGz9mgZaJEaDkMYG9qzQDzCHYMtN56sm7K0JHuT2J2kwaGS4JV_D-Z7RWlMtG6lpxP2VPRlZJ3W8_CIYtHltegljxSpoP_OhtGxfeCOPYRMK95mTKTQBmMKylw6iw5Z2QHeQrpyrDhAfTeNeB6VPY49_AU8fUT1Olq7rCquIMAoQgIIBrmcw_Uw
 
 # Create Kiali Secret
 NAMESPACE=istio-system
@@ -46,6 +46,8 @@ EOF
 
 # Install Helm and Istio full control plane
 
+export PATH="$PATH:/home/mgigamail/istio-1.1.9/bin"
+cd istio-1.1.9
 
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
 
@@ -57,8 +59,7 @@ helm repo update
 
 kubectl get deploy,svc tiller-deploy -n kube-system
 
-export PATH="$PATH:/home/mgigamail/istio-1.1.8/bin"
-cd istio-1.1.8
+
 
 helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
 
@@ -75,9 +76,11 @@ export POLICY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=polic
 export TELEMETRY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=telemetry -o jsonpath='{.items[0].status.podIP}')
 
 # Copy these values and save in other cluster
-echo $PILOT_POD_IP
-echo $POLICY_POD_IP
-echo $TELEMETRY_POD_IP
+echo export PILOT_POD_IP=$PILOT_POD_IP; echo export POLICY_POD_IP=$POLICY_POD_IP ; echo export TELEMETRY_POD_IP=$TELEMETRY_POD_IP
+> export PILOT_POD_IP=10.1.1.13
+export POLICY_POD_IP=10.1.1.12
+export TELEMETRY_POD_IP=10.1.0.10
+
 
 # On the Remote Cluster
 # Deploy the EKS Cluster
@@ -85,9 +88,9 @@ echo $TELEMETRY_POD_IP
 eksctl create cluster --config-file=eks-config.yaml
 
 # Paste here the values obtained from the last step
-export PILOT_POD_IP=10.44.0.20
-export POLICY_POD_IP=10.44.1.23
-export TELEMETRY_POD_IP=10.44.1.25
+export PILOT_POD_IP=10.1.1.13
+export POLICY_POD_IP=10.1.1.12
+export TELEMETRY_POD_IP=10.1.0.10
 
 # Deploy the istio-remote component to each remote K8s cluster with Helm + Tiller
 

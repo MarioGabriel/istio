@@ -7,13 +7,13 @@ metadata:
   version: "1.12"
 
 vpc:
-  id: "vpc-0dea19edc4286baf6"
-  cidr: "10.0.0.0/16"
+  id: "vpc-0d8f2a13f73f0db9e"
+  cidr: "10.100.0.0/16"
   subnets:
     public:
-      us-east-2a: {id: subnet-09244e6577f247fee}
-      us-east-2b: {id: subnet-0c4cf6829d0365896}
-      us-east-2c: {id: subnet-0f97a6b39534b2400}
+      us-east-2a: {id: subnet-0007b522f2d51de46, cidr: 10.100.1.0/24}
+      us-east-2b: {id: subnet-08a2b29c345c0b56f, cidr: 10.100.2.0/24}
+      us-east-2c: {id: subnet-0d468f4045aae0592, cidr: 10.100.3.0/24}
 
 iam:
   serviceRoleARN: "arn:aws:iam::448647583624:role/eks-iam-role"
@@ -24,7 +24,7 @@ nodeGroups:
     ami: auto
     minSize: 1
     maxSize: 4
-    availabilityZones: ["us-east-2c"]
+    availabilityZones: ["us-east-2a","us-east-2b","us-east-2c"]
     iam:
       withAddonPolicies:
         imageBuilder: true

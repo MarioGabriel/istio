@@ -8,9 +8,9 @@ a VPN Connection. Each VPN Connection is assigned a VPN Connection Identifier
 and is associated with two other identifiers, namely the 
 Customer Gateway Identifier and the Virtual Private Gateway Identifier.
 
-Your VPN Connection ID		         : vpn-02c5c0e4a42976f61
-Your Virtual Private Gateway ID          : vgw-090494b6c9a16e478
-Your Customer Gateway ID    		 : cgw-07b31196c111cbd19
+Your VPN Connection ID		         : vpn-099592cf2342c897e
+Your Virtual Private Gateway ID          : vgw-0c8223092c5224128
+Your Customer Gateway ID    		 : cgw-05572de1df341c1b5
 		
 A VPN Connection consists of a pair of IPSec tunnel security associations (SAs). 
 It is important that both tunnel security associations be configured. 
@@ -30,7 +30,7 @@ Your customer gateway may reside behind a device performing network address tran
 To ensure that NAT traversal (NAT-T) can function, you must adjust your firewall !rules to unblock UDP port 4500. If not behind NAT, we recommend disabling NAT-T.
   - IKE version              : IKEv1 
   - Authentication Method    : Pre-Shared Key 
-  - Pre-Shared Key           : tOnXG60Ql4MeNNtxprf0NF.M5MnhnIo4
+  - Pre-Shared Key           : KKbzKquA.K4z9W3_YgYSjzQrG9Lh2a4a
   - Authentication Algorithm : sha1
   - Encryption Algorithm     : aes-128-cbc
   - Lifetime                 : 28800 seconds
@@ -85,12 +85,12 @@ The Customer Gateway inside IP address should be configured on your tunnel
 interface. 
 
 Outside IP Addresses:
-  - Customer Gateway 		        : 35.188.98.75 
-  - Virtual Private Gateway	        : 18.216.143.176
+  - Customer Gateway 		        : 35.195.78.202 
+  - Virtual Private Gateway	        : 3.17.247.144
 		
 Inside IP Addresses
-  - Customer Gateway         		: 169.254.56.130/30
-  - Virtual Private Gateway             : 169.254.56.129/30
+  - Customer Gateway         		: 169.254.59.226/30
+  - Virtual Private Gateway             : 169.254.59.225/30
 
 Configure your tunnel to fragment at the optimal size:
   - Tunnel interface MTU     : 1436 bytes
@@ -103,7 +103,7 @@ you will need a static route added to your router.
 
 Static Route Configuration Options:
 
-  - Next hop       : 169.254.56.129
+  - Next hop       : 169.254.59.225
   
 You should add static routes towards your internal network on the VGW.
 The VGW will then send traffic towards your internal network over 
@@ -125,7 +125,7 @@ Your customer gateway may reside behind a device performing network address tran
 To ensure that NAT traversal (NAT-T) can function, you must adjust your firewall !rules to unblock UDP port 4500. If not behind NAT, we recommend disabling NAT-T.
   - IKE version              : IKEv1 
   - Authentication Method    : Pre-Shared Key 
-  - Pre-Shared Key           : DsjIfXFt9pg5yN38lAedmSRXxjshFZfd
+  - Pre-Shared Key           : 7j51kMdG51rdT5npmVWLCZyjXfV803f1
   - Authentication Algorithm : sha1
   - Encryption Algorithm     : aes-128-cbc
   - Lifetime                 : 28800 seconds
@@ -180,12 +180,12 @@ The Customer Gateway inside IP address should be configured on your tunnel
 interface. 
 
 Outside IP Addresses:
-  - Customer Gateway 		        : 35.188.98.75 
-  - Virtual Private Gateway	        : 18.219.109.67
+  - Customer Gateway 		        : 35.195.78.202 
+  - Virtual Private Gateway	        : 18.217.224.68
 		
 Inside IP Addresses
-  - Customer Gateway         		: 169.254.56.86/30
-  - Virtual Private Gateway             : 169.254.56.85/30
+  - Customer Gateway         		: 169.254.59.182/30
+  - Virtual Private Gateway             : 169.254.59.181/30
 
 Configure your tunnel to fragment at the optimal size:
   - Tunnel interface MTU     : 1436 bytes
@@ -198,7 +198,7 @@ you will need a static route added to your router.
 
 Static Route Configuration Options:
 
-  - Next hop       : 169.254.56.85
+  - Next hop       : 169.254.59.181
   
 You should add static routes towards your internal network on the VGW.
 The VGW will then send traffic towards your internal network over 
