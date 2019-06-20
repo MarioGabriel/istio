@@ -1,3 +1,3 @@
-export CLUSTER_NAME=eks-remote-cluster.us-east-2.eksctl.io
-export KUBECFG_FILE=/home/mario/istio/istio-1.1.8/eks-remote-cluster.us-east-2.eksctl.io
+export CLUSTER_NAME=test-cluster.us-east-2.eksctl.io
+export KUBECFG_FILE=/home/mario/istio/istio-1.1.9/test-cluster.us-east-2.eksctl.io
 export NAMESPACE=istio-system
