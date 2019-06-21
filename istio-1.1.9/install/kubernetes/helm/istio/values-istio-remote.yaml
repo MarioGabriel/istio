@@ -20,12 +20,24 @@ security:
 prometheus:
   enabled: false
 
+sidecarInjectorWebhook.enabled: true
+
+
 global:
   istioRemote: true
 
   defaultPodDisruptionBudget: {}
 
   enableTracing: false
+
+  remotePilotAddress: 10.1.1.13
+
+  remotePolicyAddress: 10.1.1.12
+
+  remoteTelemetryAddress: 10.1.0.10
+
+  remotePilotCreateSvcEndpoint: true
+
 
   # Sets an identifier for the remote network to be used for Split Horizon EDS. The network will be sent
   # to the Pilot when connected by the sidecar and will affect the results returned in EDS requests.
