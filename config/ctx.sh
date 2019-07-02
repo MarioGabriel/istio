@@ -16,10 +16,10 @@ set_eks () {
 }
 
 
-if [$1 = gke]
+if [$1 = "gke"]
 then
 	set_gke
-elif [$1 = eks]
+elif [$1 = "eks"]
 then 
 	set_eks
 else
