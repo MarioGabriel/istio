@@ -16,12 +16,15 @@ set_eks () {
 }
 
 
-if [$1 = "gke"]
+if [$1 = gke]
 then
 	set_gke
-elif [$1 = "eks"]
+	exit 1
+elif [$1 = eks]
 then 
 	set_eks
+	exit 1
 else
 	echo "No valid context given"
+	exit 0
 fi
