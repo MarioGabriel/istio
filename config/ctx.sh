@@ -6,23 +6,13 @@ gcloud container clusters get-credentials gke-local-cluster --zone europe-west1-
 eks=$(kubectl config get-contexts -o='name' | grep 'eks')
 gke=$(kubectl config get-contexts -o='name' | grep 'gke')
 
-
-set_gke () {
-	kubectl config use-context $gke
-}
-
-set_eks () {
-	kubectl config use-context $eks
-}
-
-
 if [$1 = gke]
 then
-	set_gke
+	kubectl config use-context $gke
 	exit 1
 elif [$1 = eks]
 then 
-	set_eks
+	kubectl config use-context $eks
 	exit 1
 else
 	echo "No valid context given"
