@@ -1,20 +1,50 @@
 #!/bin/bash
 
-if [ $1 = eks ]
-then
-  eksctl utils write-kubeconfig --name=test-cluster -v 0
-  eks_ctx=$(kubectl config get-contexts -o='name' | grep 'eks')
-  kubectl config use-context $eks_ctx > /dev/null;
-  echo Now using EKS cluster ...
-elif [ $1 = gke ]
-then
+eks_ctx=$(kubectl config get-contexts -o='name' | grep 'eks')
+gke_ctx=$(kubectl config get-contexts -o='name' | grep 'gke')
+
+set_gke() {
   gcloud container clusters get-credentials gke-local-cluster --zone europe-west1-b --project istiotest-239415 --no-user-output-enabled
   gke_ctx=$(kubectl config get-contexts -o='name' | grep 'gke')
   kubectl config use-context $gke_ctx > /dev/null;
   echo Now using GKE cluster ...
+}
+
+set_eks() {
+  eksctl utils write-kubeconfig --name=test-cluster -v 0
+  eks_ctx=$(kubectl config get-contexts -o='name' | grep 'eks')
+  kubectl config use-context $eks_ctx > /dev/null;
+  echo Now using EKS cluster ...
+}
+
+if [ $1 = eks ]
+then
+  set_eks
+
+elif [ $1 = gke ]
+then
+  set_gke
+
 elif [ $1 = show ]
 then
   kubectl config get-contexts
+
+elif [ $1 = current ]
+then
+  kubectl config current-context
+
+elif [ $1 = switch ]; then
+  # Current is eks if empty, current is gke if not empty
+  current=$(kubectl config current-context | grep 'gke');
+  # If current is empty then set gke. If current is not empty then set eks.
+  [ -z "$current" ] && set_gke || set_eks
+
 else
-  echo No valid context given. Options : eks, gke, show
+  echo No valid option given. Valid options : eks, gke, show, current, switch $'\n';
+  echo $'\t' eks $'\t' : changes current cluster to EKS;
+  echo $'\t' gke $'\t' : changes current cluster to GKE;
+  echo $'\t' show $'\t' : shows available contexts;
+  echo $'\t' current : shows current context;
+  echo $'\t' switch ' ': switches contexts;
 fi
+
