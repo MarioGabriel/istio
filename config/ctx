@@ -1,0 +1,22 @@
+#!/bin/bash
+
+eksctl utils write-kubeconfig --name=test-cluster -v 0
+gcloud container clusters get-credentials gke-local-cluster --zone europe-west1-b --project istiotest-239415 --no-user-output-enabled
+
+eks_ctx=$(kubectl config get-contexts -o='name' | grep 'eks')
+gke_ctx=$(kubectl config get-contexts -o='name' | grep 'gke')
+
+if [ $1 = eks ]
+then
+  kubectl config use-context $eks_ctx > /dev/null;
+  echo Using EKS cluster
+elif [ $1 = gke ]
+then
+  kubectl config use-context $gke_ctx > /dev/null;
+  echo Using GKE cluster
+elif [ $1 = show ]
+then
+  kubectl config get-contexts
+else
+  echo No valid context given
+fi
