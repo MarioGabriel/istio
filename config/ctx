@@ -1,5 +1,6 @@
 #!/bin/bash
 
+rm ~/.kube/config
 eksctl utils write-kubeconfig --name=test-cluster -v 0
 gcloud container clusters get-credentials gke-local-cluster --zone europe-west1-b --project istiotest-239415 --no-user-output-enabled
 
