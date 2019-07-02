@@ -1,0 +1,62 @@
+---
+##################################################################################################
+# Ratings service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  labels:
+    app: ratings
+    service: ratings
+    cluster: eks
+spec:
+  ports:
+  - port: 9080
+    name: http
+---
+##################################################################################################
+# Reviews service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+    service: reviews
+    cluster: eks
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: reviews
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v4
+  labels:
+    app: reviews
+    version: v4
+    cluster: eks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v4
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v4
+    spec:
+      containers:
+      - name: reviews
+        image: mariogabrielg/examples-bookinfo-reviews-v4:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9080
+---
