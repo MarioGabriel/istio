@@ -9,14 +9,14 @@ gke_ctx=$(kubectl config get-contexts -o='name' | grep 'gke')
 if [ $1 = eks ]
 then
   kubectl config use-context $eks_ctx > /dev/null;
-  echo Using EKS cluster
+  echo Now using EKS cluster ...
 elif [ $1 = gke ]
 then
   kubectl config use-context $gke_ctx > /dev/null;
-  echo Using GKE cluster
+  echo Now using GKE cluster ...
 elif [ $1 = show ]
 then
   kubectl config get-contexts
 else
-  echo No valid context given
+  echo No valid context given. Options : eks, gke, show
 fi
