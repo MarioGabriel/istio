@@ -1,0 +1,50 @@
+Montrer les éléments du Control Plane Kubernetes et Istio [GKE]
+	ctx ls
+	ctx gke
+	kubectl get pods –n kube-system
+	kubectl get pods –n istio-system
+
+Montrer les dashboards disponibles pour le monitoring (Grafana, Kiali, Jaeger) [GKE]
+	gcloud container clusters get-credentials gke-local-cluster --zone europe-west1-b --project istiotest-239415
+	istioctl experimental dashboard grafana
+	istioctl experimental dashboard kiali
+	istioctl experimental dashboard jaeger
+
+Déploiement de l’application Bookinfo e de son Ingress Gateway, visualisation du trafic [GKE]
+	kubectl apply –f tests/iii/bookinfo.yaml
+	kubectl apply -f tests/iii/bookinfo-gateway.yaml
+	kubectl get pods –n default
+	ctx test
+
+Fault Injection, visualisation du trafic [GKE]
+	kubectl apply -f redirect-user-mario.yaml
+	kubectl apply -f tests/iv/fault-injection.yaml
+	kubectl delete -f redirect-user-mario.yaml
+	kubectl delete -f tests/iv/fault-injection.yaml
+
+Canary Release, visualisation du trafic [EKS]
+	ctx switch
+	ctx ls
+	kubectl get pods --all-namespaces
+	kubectl apply -f tests/v/ratings-reviews-v4-eks.yaml
+	ctx switch
+	ctx test
+
+Load balancing, visualisation du trafic [GKE]
+	ctx switch
+	ctx ls
+	kubectl apply -f tests/vi/loadbalancing90-10-v4.yaml
+	ctx test
+	kubectl apply -f tests/vi/loadbalancing33-v234.yaml
+	ctx test
+	kubectl apply -f tests/vi/loadbalancing100-v4.yaml
+	ctx test
+
+Teardown de l’application [GKE / EKS]
+	kubectl delete -f tests/vi/loadbalancing100-v4.yaml
+	kubectl delete –f tests/iii/bookinfo.yaml
+	kubectl delete -f tests/iii/bookinfo-gateway.yaml
+	watch -n0 kubectl get pods --all-namespaces
+	ctx switch
+	kubectl delete -f tests/v/ratings-reviews-v4-eks.yaml
+	watch -n0 kubectl get pods --all-namespaces
