@@ -52,6 +52,7 @@ spec:
       labels:
         app: reviews
         version: v4
+        cluster: eks
     spec:
       containers:
       - name: reviews

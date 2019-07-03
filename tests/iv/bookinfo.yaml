@@ -49,6 +49,7 @@ spec:
       labels:
         app: details
         version: v1
+        cluster: gke
     spec:
       containers:
       - name: details
@@ -94,6 +95,7 @@ spec:
       labels:
         app: ratings
         version: v1
+        cluster: gke
     spec:
       containers:
       - name: ratings
@@ -139,6 +141,7 @@ spec:
       labels:
         app: reviews
         version: v1
+        cluster: gke
     spec:
       containers:
       - name: reviews
@@ -166,6 +169,7 @@ spec:
       labels:
         app: reviews
         version: v2
+        cluster: gke
     spec:
       containers:
       - name: reviews
@@ -193,6 +197,7 @@ spec:
       labels:
         app: reviews
         version: v3
+        cluster: gke
     spec:
       containers:
       - name: reviews
@@ -238,6 +243,7 @@ spec:
       labels:
         app: productpage
         version: v1
+        cluster: gke
     spec:
       containers:
       - name: productpage
