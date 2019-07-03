@@ -39,12 +39,20 @@ elif [ $1 = switch ]; then
   # If current is empty then set gke. If current is not empty then set eks.
   [ -z "$current" ] && set_gke || set_eks
 
+elif [ $1 = gwy]; then
+  export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}');
+  export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}');
+  export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}');
+  export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT;
+  echo $GATEWAY_URL;
+
 else
-  echo No valid option given. Valid options : eks, gke, show, current, switch $'\n';
+  echo No valid option given. Valid options : eks, gke, show, current, switch, gwy $'\n';
   echo $'\t' eks $'\t' : changes current cluster to EKS;
   echo $'\t' gke $'\t' : changes current cluster to GKE;
   echo $'\t' show $'\t' : shows available contexts;
   echo $'\t' current : shows current context;
   echo $'\t' switch ' ': switches contexts;
+  echo $'\t' gwy $'\t' : shows the Gateway URL;
 fi
 
