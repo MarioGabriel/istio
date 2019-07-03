@@ -10,7 +10,7 @@ spec:
     - destination:
         host: reviews
         subset: v4
-------
+---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:

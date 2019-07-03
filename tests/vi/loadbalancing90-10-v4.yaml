@@ -23,7 +23,7 @@ spec:
         host: reviews
         subset: v4
       weight: 10
-------
+---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
