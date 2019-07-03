@@ -28,7 +28,7 @@ if [ $1 = eks ]; then
 elif [ $1 = gke ]; then
   set_gke
 
-elif [ $1 = show ]; then
+elif [ $1 = ls ]; then
   kubectl config get-contexts
 
 elif [ $1 = current ]; then
@@ -59,7 +59,7 @@ else
   echo No valid option given. Valid options : eks, gke, show, current, switch, gwy, test $'\n';
   echo $'\t' eks $'\t' : changes current cluster to EKS;
   echo $'\t' gke $'\t' : changes current cluster to GKE;
-  echo $'\t' show $'\t' : shows available contexts;
+  echo $'\t' ls $'\t' : shows available contexts;
   echo $'\t' current : shows current context;
   echo $'\t' switch ' ': switches contexts;
   echo $'\t' gwy $'\t' : shows the Gateway URL;
