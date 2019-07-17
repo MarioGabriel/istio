@@ -2,13 +2,8 @@
 
 ## Deploying the local GKE cluster
 
-`gcloud config set project istiotest-239415`
-`proj=$(gcloud config list --format='value(core.project)')`
-`zone="us-central1-a"`
-`region="us-central1"`
-`cluster="gke-local-cluster"`
+gcloud beta container --project "istiotest-239415" clusters create "gke-local-cluster" --zone "europe-west1-b" --no-enable-basic-auth --cluster-version "1.12.8-gke.10" --machine-type "n1-standard-2" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "2" --enable-cloud-logging --enable-cloud-monitoring --enable-ip-alias --network "projects/istiotest-239415/global/networks/gke-poc-vpc" --subnetwork "projects/istiotest-239415/regions/europe-west1/subnetworks/gke-poc-subnet" --cluster-ipv4-cidr "10.1.0.0/20" --services-ipv4-cidr "172.16.0.0/24" --default-max-pods-per-node "110" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair
 
-`gcloud beta container --project $proj clusters create $cluster --username "admin" --zone $zone --cluster-version "1.13.6-gke.6" --machine-type "n1-standard-4" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --metadata disable-legacy-endpoints=true --default-max-pods-per-node=110 --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "2" --enable-cloud-logging --enable-cloud-monitoring --enable-ip-alias --network "projects/$proj/global/networks/default" --subnetwork "projects/$proj/regions/$region/subnetworks/default" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair --async`
 
 ## Deploying the Remote EKS Cluster
 
