@@ -10,7 +10,7 @@ metadata:
     service: hello-world
 spec:
   ports:
-  - port: 80
+  - port: 5000
     name: http
   selector:
     app: hello-world
@@ -39,5 +39,5 @@ spec:
         image: mariogabrielg/hello-world:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 5000
 ---
