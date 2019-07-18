@@ -41,3 +41,16 @@ spec:
         ports:
         - containerPort: 80
 ---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: demo
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /hello
+        backend:
+          serviceName: hello-world
+          servicePort: 80
+---
