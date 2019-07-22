@@ -21,6 +21,18 @@ ctx gke
 NAMESPACE=istio-system
 kubectl create namespace $NAMESPACE
 
+# Kubernetes Dashboard
+kubectl create serviceaccount k8sadmin -n kube-system
+kubectl create clusterrolebinding k8sadmin --clusterrole=cluster-admin --serviceaccount=kube-system:k8sadmin
+kubectl get secret $(kubectl get secret -n kube-system | grep k8sadmin-token | cut -d " " -f1) -n kube-system -o 'jsonpath={.data.token}' | base64 --decode
+# Token : 
+#  eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrOHNhZG1pbi10b2tlbi16NmY0cSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrOHNhZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6Ijc2MGY0MmRiLWFhMDItMTFlOS1iNDYxLTQyMDEwYTg0MDBkNSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprOHNhZG1pbiJ9.VFOx271cQYxCSmdEL3qC-GryX-ssPTpmor8QiGw1LurWzFKEJ226bsaewVifndINPVafS5uXl56xeC9o3kLzDS_m0pKH1P7PAxZgwhfqoh1Umf4eCEVfE6iNRbYUSDfft23XWZQH4O1hO29KqYfHVtsvV7E9SaDapZ8iIPwhYLc8Uwcnne66ZfAc4DTpogELSq4yWyYI5HjDxqtEFoQPNC8W8_wCVZGXV8gDZOkdcZF1h1KPd1xR4ZFpE34KnnM1oT7sR6l3_zYfWVkKOARH_SbwpVFniAu14141_nk8hEqoItarFOkyqxts3trh__WFBQ2nig5kXB84lNgX24fMJw
+
+# Deploy the dashboard
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta1/aio/deploy/recommended.yaml
+
+# $ kubectl proxy # to deploy the dashboard and paste the token above to access it
+
 # Username and pass for kiali dashboard
 KIALI_USERNAME=$(read -p 'Kiali Username: ' uval && echo -n $uval | base64)
 KIALI_PASSPHRASE=$(read -sp 'Kiali Passphrase: ' pval && echo -n $pval | base64)

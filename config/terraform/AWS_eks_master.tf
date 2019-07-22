@@ -1,6 +1,6 @@
 // AWS IAM role for EKS Master
 resource "aws_iam_role" "master" {
-  name = "eks-cluster"
+  name = "terraform-eks-master"
 
   assume_role_policy = <<POLICY
 {
@@ -34,7 +34,7 @@ resource "aws_iam_role_policy_attachment" "poc-AmazonEKSServicePolicy" {
 
 // EKS Master Cluster IAM Role
 resource "aws_security_group" "eks" {
-  name        = "eks-cluster"
+  name        = "terraform-eks-master"
   description = "Cluster communication with worker nodes"
   vpc_id      = "${aws_vpc.demo.id}"
 
@@ -61,7 +61,7 @@ resource "aws_security_group_rule" "poc-ingress-workstation-https" {
 
 //  Creates the EKS Cluster
 resource "aws_eks_cluster" "demo" {
-  name            = "eks-cluster"
+  name            = "terraform-eks-master"
   role_arn        = "${aws_iam_role.master.arn}"
 
   vpc_config {

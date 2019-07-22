@@ -1,28 +1,30 @@
-Montrer les éléments du Control Plane Kubernetes et Istio [GKE]
+# Montrer les éléments du Control Plane Kubernetes et Istio [GKE]
 	ctx ls
 	ctx gke
 	kubectl get pods –n kube-system
 	kubectl get pods –n istio-system
 
-Montrer les dashboards disponibles pour le monitoring (Grafana, Kiali, Jaeger) [GKE]
+# Montrer les dashboards disponibles pour le monitoring (Grafana, Kiali, Jaeger) [GKE]
 	gcloud container clusters get-credentials gke-local-cluster --zone europe-west1-b --project istiotest-239415
 	istioctl experimental dashboard grafana
 	istioctl experimental dashboard kiali
 	istioctl experimental dashboard jaeger
+	kubectl proxy
+	# eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrOHNhZG1pbi10b2tlbi16NmY0cSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJrOHNhZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6Ijc2MGY0MmRiLWFhMDItMTFlOS1iNDYxLTQyMDEwYTg0MDBkNSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTprOHNhZG1pbiJ9.VFOx271cQYxCSmdEL3qC-GryX-ssPTpmor8QiGw1LurWzFKEJ226bsaewVifndINPVafS5uXl56xeC9o3kLzDS_m0pKH1P7PAxZgwhfqoh1Umf4eCEVfE6iNRbYUSDfft23XWZQH4O1hO29KqYfHVtsvV7E9SaDapZ8iIPwhYLc8Uwcnne66ZfAc4DTpogELSq4yWyYI5HjDxqtEFoQPNC8W8_wCVZGXV8gDZOkdcZF1h1KPd1xR4ZFpE34KnnM1oT7sR6l3_zYfWVkKOARH_SbwpVFniAu14141_nk8hEqoItarFOkyqxts3trh__WFBQ2nig5kXB84lNgX24fMJw
 
-Déploiement de l’application Bookinfo e de son Ingress Gateway, visualisation du trafic [GKE]
+# Déploiement de l’application Bookinfo e de son Ingress Gateway, visualisation du trafic [GKE]
 	kubectl apply –f tests/iii/bookinfo.yaml
 	kubectl apply -f tests/iii/bookinfo-gateway.yaml
 	kubectl get pods –n default
 	ctx test
 
-Fault Injection, visualisation du trafic [GKE]
+# Fault Injection, visualisation du trafic [GKE]
 	kubectl apply -f redirect-user-mario.yaml
 	kubectl apply -f tests/iv/fault-injection.yaml
 	kubectl delete -f redirect-user-mario.yaml
 	kubectl delete -f tests/iv/fault-injection.yaml
 
-Canary Release, visualisation du trafic [EKS]
+# Canary Release, visualisation du trafic [EKS]
 	ctx switch
 	ctx ls
 	kubectl get pods --all-namespaces
@@ -30,7 +32,7 @@ Canary Release, visualisation du trafic [EKS]
 	ctx switch
 	ctx test
 
-Load balancing, visualisation du trafic [GKE]
+# Load balancing, visualisation du trafic [GKE]
 	ctx switch
 	ctx ls
 	kubectl apply -f tests/vi/loadbalancing90-10-v4.yaml
@@ -40,7 +42,7 @@ Load balancing, visualisation du trafic [GKE]
 	kubectl apply -f tests/vi/loadbalancing100-v4.yaml
 	ctx test
 
-Teardown de l’application [GKE / EKS]
+# Teardown de l’application [GKE / EKS]
 	kubectl delete -f tests/vi/loadbalancing100-v4.yaml
 	kubectl delete –f tests/iii/bookinfo.yaml
 	kubectl delete -f tests/iii/bookinfo-gateway.yaml
