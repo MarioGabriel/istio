@@ -9,9 +9,10 @@ metadata:
   name: hello-world
 spec:
   ports:
-  - port: 80
+  -  
+    port: 80
     protocol: TCP
-    targetPort: 5000
+    targetPort: 8000
   selector:
     app: hello-world
 ---
@@ -35,22 +36,61 @@ spec:
         version: v1
     spec:
       containers:
-      - name: hello-world
-        image: mariogabrielg/hello-world:latest
+      - 
+        name: hello-world
+        image: mariogabrielg/hello-sentelis:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 5000
+        - 
+          containerPort: 8000
 ---
+#######################################
+# External Backend Service            #
+#######################################
+kind: Service
+apiVersion: v1
+metadata:
+ name: external-service
+Spec:
+ type: ClusterIP
+ ports:
+ - 
+   port: 80
+   targetPort: 27017
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+ name: external-service
+subsets:
+ - 
+   addresses:
+     - 
+       ip: 10.240.0.4
+   ports:
+     - 
+       port: 27017
+---
+#######################################
+# Kong Route                          #
+#######################################
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: demo
 spec:
   rules:
-  - http:
+  - 
+    http:
       paths:
-      - path: /hello
+      - 
+        path: /hello
         backend:
           serviceName: hello-world
+          servicePort: 80
+      - 
+        path: /backend
+        backend:
+          serviceName: external-service
           servicePort: 80
 ---

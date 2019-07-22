@@ -1,9 +1,11 @@
-FROM python:3.5-alpine3.9
+FROM python:3.7.4-alpine3.9
+
 
 RUN apk update
+RUN pip install Flask
 
-COPY index.html ./
+COPY hello_world.py ./
 
-CMD python http.server
+CMD python hello_world.py
 
 EXPOSE 8000
